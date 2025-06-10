@@ -1,29 +1,54 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+// file: app/_layout.tsx
+
+import { COLORS } from '@/constants/theme';
+import { store } from '@/store/store';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { Provider } from 'react-redux';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const [fontsLoaded] = useFonts({});
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  useEffect(() => {
+    async function hideSplash() {
+      await SplashScreen.hideAsync();
+    }
+    hideSplash();
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <Provider store={store}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+        
+        <Stack.Screen
+          name="product/[id]"
+          options={{
+            headerStyle: { backgroundColor: COLORS.lightWhite },
+            headerShadowVisible: false,
+            headerTitle: "",
+            headerBackTitleVisible: false,
+            headerTintColor: COLORS.secondary,
+          }}
+        />
+
+        {/* --- ADDED THIS NEW SCREEN FOR THE CART --- */}
+        <Stack.Screen
+          name="cart" // This corresponds to the new app/cart.tsx file
+          options={{
+            presentation: 'modal', // Makes it slide up from the bottom
+            headerStyle: { backgroundColor: COLORS.lightWhite },
+            headerShadowVisible: false,
+            headerTitle: "My Cart",
+            headerBackTitleVisible: false,
+            headerTintColor: COLORS.secondary,
+          }}
+        />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </Provider>
   );
 }
