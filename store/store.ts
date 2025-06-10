@@ -2,12 +2,14 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import cartReducer from './cartSlice';
-import orderReducer from './orderSlice'; // <-- 1. IMPORT THE NEW REDUCER
+import orderReducer from './orderSlice';
+import productsReducer from './productsSlice';
 
 export const store = configureStore({
     reducer: {
         cart: cartReducer,
-        orders: orderReducer, // <-- 2. REGISTER THE REDUCER HERE
+        orders: orderReducer,
+        products: productsReducer,
     },
 });
 

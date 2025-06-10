@@ -9,6 +9,25 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+// Helper function to resolve asset filenames to require() statements
+const getImageSource = (imageUrl: string) => {
+  // If it's already a full URL, use it as is
+  if (imageUrl.startsWith('http')) {
+    return { uri: imageUrl };
+  }
+  
+  // Map asset filenames to require() statements
+  const assetMap: { [key: string]: any } = {
+    'double apple.png': require('../assets/images/double apple.png'),
+    'grape and mint.png': require('../assets/images/grape and mint.png'),
+    'lemon and mint.png': require('../assets/images/lemon and mint.png'),
+    'blueberry passion.png': require('../assets/images/blueberry passion.png'),
+  };
+  
+  // Return the require() statement if found, otherwise try as URI
+  return assetMap[imageUrl] || { uri: imageUrl };
+};
+
 const CartScreen = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -32,7 +51,7 @@ const CartScreen = () => {
     // Component to render a single item in the cart list
     const renderCartItem = ({ item }: { item: CartItem }) => (
         <View style={styles.itemContainer}>
-            <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+            <Image source={getImageSource(item.imageUrl)} style={styles.itemImage} />
             <View style={styles.itemDetails}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemOptions}>Head: {item.headType}</Text>

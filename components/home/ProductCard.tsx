@@ -20,10 +20,31 @@ type ProductCardProps = {
   onPress: () => void;
 };
 
+// Helper function to resolve asset filenames to require() statements
+const getImageSource = (imageUrl: string) => {
+  // If it's already a full URL, use it as is
+  if (imageUrl.startsWith('http')) {
+    return { uri: imageUrl };
+  }
+  
+  // Map asset filenames to require() statements
+  const assetMap: { [key: string]: any } = {
+    'double apple.png': require('../../assets/images/double apple.png'),
+    'grape and mint.png': require('../../assets/images/grape and mint.png'),
+    'lemon and mint.png': require('../../assets/images/lemon and mint.png'),
+    'blueberry passion.png': require('../../assets/images/blueberry passion.png'),
+  };
+  
+  // Return the require() statement if found, otherwise try as URI
+  return assetMap[imageUrl] || { uri: imageUrl };
+};
+
 const ProductCard = ({ product, onPress }: ProductCardProps) => {
+  const imageSource = getImageSource(product.imageUrl);
+  
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <Image source={{ uri: product.imageUrl }} style={styles.image} />
+      <Image source={imageSource} style={styles.image} />
       <View style={styles.textContainer}>
         <Text style={styles.name}>{product.name}</Text>
         <Text style={styles.category}>{product.category}</Text>

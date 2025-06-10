@@ -3,13 +3,20 @@
 import { COLORS, SIZES } from '@/constants/theme';
 import { clearCart } from '@/store/cartSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addOrder } from '@/store/orderSlice'; // <-- IMPORT THE NEW ACTION
+import { createOrder } from '@/store/orderSlice';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView from 'react-native-maps';
+
+type Region = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
 
 const CheckoutScreen = () => {
     const router = useRouter();
@@ -22,7 +29,7 @@ const CheckoutScreen = () => {
         };
     });
 
-    const [mapRegion, setMapRegion] = useState(null);
+    const [mapRegion, setMapRegion] = useState<Region | null>(null);
     const [addressNotes, setAddressNotes] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('Cash'); // Default payment method
@@ -76,12 +83,11 @@ const CheckoutScreen = () => {
             },
             addressNotes: addressNotes,
             paymentMethod: paymentMethod,
-            orderDate: new Date().toISOString(),
             status: 'Pending' as const, // Set initial status, 'as const' helps TypeScript
         };
 
-        // Dispatch the action to save the order in the Redux store
-        dispatch(addOrder(newOrder));
+        // Dispatch the action to save the order in Firebase and Redux store
+        dispatch(createOrder(newOrder));
 
         // Show a success message and navigate the user
         Alert.alert(

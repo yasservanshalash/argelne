@@ -1,14 +1,34 @@
 // file: app/product/[id].tsx
 
-import { MOCK_PRODUCTS } from '@/constants/mock';
 import { COLORS, SIZES } from '@/constants/theme';
 import { addItem } from '@/store/cartSlice';
-import { useAppDispatch } from '@/store/hooks'; // ADD THIS LINE
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchProductById } from '@/store/productsSlice';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Helper function to resolve asset filenames to require() statements
+const getImageSource = (imageUrl: string) => {
+  // If it's already a full URL, use it as is
+  if (imageUrl.startsWith('http')) {
+    return { uri: imageUrl };
+  }
+  
+  // Map asset filenames to require() statements
+  const assetMap: { [key: string]: any } = {
+    'double apple.png': require('../../assets/images/double apple.png'),
+    'grape and mint.png': require('../../assets/images/grape and mint.png'),
+    'lemon and mint.png': require('../../assets/images/lemon and mint.png'),
+    'blueberry passion.png': require('../../assets/images/blueberry passion.png'),
+  };
+  
+  // Return the require() statement if found, otherwise try as URI
+  return assetMap[imageUrl] || { uri: imageUrl };
+};
+
 // A simple Stepper component for the number of coals
 const Stepper = ({ value, onIncrement, onDecrement }: { value: number; onIncrement: () => void; onDecrement: () => void }) => (
     <View style={styles.stepperContainer}>
@@ -31,10 +51,17 @@ const ProductDetailScreen = () => {
     const [headType, setHeadType] = useState('Clay'); // Default head type
     const [extraCoals, setExtraCoals] = useState(0);
 
-    const dispatch = useAppDispatch(); // USE THE NEW HOOK
+    const dispatch = useAppDispatch();
+    const { items: products, loading } = useAppSelector((state) => state.products);
 
-    // Find the product from our mock data based on the ID from the URL
-    const product = MOCK_PRODUCTS.find(p => p.id === id);
+    // Find the product from Redux store or fetch it if not found
+    const product = products.find(p => p.id === id);
+
+    useEffect(() => {
+        if (!product && typeof id === 'string') {
+            dispatch(fetchProductById(id));
+        }
+    }, [dispatch, id, product]);
 
     // Calculate total price dynamically. useMemo prevents recalculating on every render.
     const totalPrice = useMemo(() => {
@@ -46,15 +73,6 @@ const ProductDetailScreen = () => {
         price += extraCoals * 0.5; // 50 cents per extra coal
         return price * quantity;
     }, [product, quantity, headType, extraCoals]);
-
-    // If the product isn't found for some reason, show a message
-    if (!product) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <Text style={styles.errorText}>Product not found!</Text>
-            </SafeAreaView>
-        );
-    }
 
     const addToCart = () => {
         if (!product) return;
@@ -76,11 +94,39 @@ const ProductDetailScreen = () => {
         router.push('/cart'); // Navigate to cart instead of going back
     };
 
+    // Show loading state while fetching product
+    if (loading && !product) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.loadingText}>Loading product...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // If the product isn't found for some reason, show a message
+    if (!product) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Product not found!</Text>
+                    <TouchableOpacity 
+                        style={styles.backButton} 
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.backButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
-                <Image source={{ uri: product.imageUrl }} style={styles.image} />
+                <Image source={getImageSource(product.imageUrl)} style={styles.image} />
                 <View style={styles.detailsContainer}>
                     <Text style={styles.productName}>{product.name}</Text>
                     <Text style={styles.productDescription}>{product.description}</Text>
@@ -222,6 +268,31 @@ const styles = StyleSheet.create({
         borderRadius: SIZES.small,
     },
     addToCartText: {
+        color: COLORS.white,
+        fontSize: SIZES.medium,
+        fontWeight: 'bold',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: SIZES.medium,
+        color: COLORS.primary,
+        marginTop: SIZES.small,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backButton: {
+        padding: SIZES.medium,
+        backgroundColor: COLORS.primary,
+        borderRadius: SIZES.small,
+    },
+    backButtonText: {
         color: COLORS.white,
         fontSize: SIZES.medium,
         fontWeight: 'bold',
